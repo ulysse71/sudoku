@@ -49,9 +49,8 @@ let int2char_num1 ich =
   if ich < 10 then char_of_int (ich + ch0)
   else char_of_int (ich - 9 + chat)
 
-(* /:inconnu
-   0-9,
-   A-.: nombre
+(* 0:inconnu
+   1-9, A-.: nombre
  *)
 let char2int_num0 ch =
   let ich = int_of_char ch in
@@ -231,6 +230,7 @@ let _ =
   readGrid fdi a;
   Printf.fprintf fdo "# grille traitee:\n";
   dumpGrid fdo a;
+  Printf.fprintf fdo "# =========\n";
   let count = solveGrid fdo 0 a in
   Printf.fprintf fdo "# nb de solutions: %d\n" count
 
