@@ -25,68 +25,57 @@
  *  
  *)
 
-open Bigarray
 
 (* parametrage *)
-let gridtype = `G9x9
 let debug = 0
 
-
 (* traductions *)
-let chdiv = int_of_char '/'
 let ch0 = int_of_char '0'
-let chat = int_of_char '@'
+let cha = int_of_char 'A'
 
-(* 0: inconnu
-   1-9, A-.: nombre
- *)
-let char2int_num1 ch =
-  let ich = int_of_char ch in
-  if ich < ch0 + 10 then ich - ch0
-  else ich - chat + 9
-
-let int2char_num1 ich =
-  if ich < 10 then char_of_int (ich + ch0)
-  else char_of_int (ich - 9 + chat)
+let a2get a i j = a.(i).(j)
+let a2set a i j v = a.(i).(j) <- v
 
 (* 0:inconnu
    1-9, A-.: nombre
  *)
-let char2int_num0 ch =
+let char2int ch =
   let ich = int_of_char ch in
-  if ich < chdiv + 11 then ich - chdiv
-  else ich - chat + 10
+  if ich < ch0 + 10 then ich - ch0
+  else ich - cha + 10
 
-let int2char_num0 ich =
-  if ich < 11 then char_of_int (ich + chdiv)
-  else char_of_int (ich - 10 + chat)
+let int2char ich =
+  if ich < 10 then char_of_int (ich + ch0)
+  else char_of_int (ich - 10 + cha)
+
+type parmsT = {
+  size: int;
+  subsizei: int;
+  subsizej: int;
+  a: int array array;
+}
 
 (* modes *)
-let size, subsizei, subsizej, int2char, char2int= (
-  match gridtype with
-    `G9x9 -> 9, 3, 3, int2char_num1, char2int_num1
-  | `G16x16T0 -> 16, 4, 4, int2char_num0, char2int_num0
-  | `G8x8P4x2 -> 8, 4, 2, int2char_num1, char2int_num1
-  | _ -> 9, 3, 3, int2char_num1, char2int_num1
-)
+let createParms size a =
+  match size with
+  | 9 -> { size; subsizei=3; subsizej=3; a }
+  | 16 -> { size; subsizei=4; subsizej=4; a }
+  | _ -> failwith "invalid data"
 
 (* lecture de la grille *)
-let readGrid fdi a =
-  for i = 0 to size - 1 do
-    for j = 0 to size - 1 do
-      Array2.set a i j (char2int (input_char fdi))
-    done;
-    ignore (input_char fdi)
-  done
+let readGrid fdi size =
+  Array.init size (fun _ ->
+    input_char fdi |> ignore;
+    Array.init size (fun _ -> input_char fdi |> char2int))
+
+let readParms fdi =
+  let size = input_char fdi |> char2int in
+  let a = readGrid fdi size in
+  createParms size a
 
 (* ecriture de la grille *)
 let dumpGrid fdo a =
-  for i = 0 to size - 1 do
-    for j = 0 to size - 1 do
-      output_char fdo (int2char (Array2.get a i j))
-    done;
-    output_char fdo '\n';
-  done
+  Array.iter (fun v -> Array.iter (fun e ->  output_char fdo (int2char e)) v; output_char fdo '\n') a
 
 (* ajout d'un element dans une liste triee *)
 let addSorted a lst =
@@ -100,7 +89,7 @@ let addSorted a lst =
   asrec [] lst
 
 (* "complement a size" d'une liste *)
-let sComplement lst =
+let sComplement lst size =
   let rec screc res i lst =
     if i = size + 1 then List.rev res
     else match lst with
@@ -116,26 +105,26 @@ let sComplement lst =
      - sur la meme colonne
      - dans le meme carre 
  *)
-let findImpossible a i j =
+let findImpossible { size; subsizei; subsizej; a } i j =
   let ibl = (i / subsizei) * subsizei and
       jbl = (j / subsizej) * subsizej in
   (* recherche horizontale des nombres deja pris *)
   let rec fhprec res n =
     if n = size then res
-    else let v = Array2.get a i n in
+    else let v = a2get a i n in
     if v = 0 then fhprec res (succ n)
     else fhprec (addSorted v res) (succ n) in
   (* recherche verticale des nombres deja pris *)
   let rec fvprec res p =
     if p = size then res
-    else let v = Array2.get a p j in
+    else let v = a2get a p j in
     if v = 0 then fvprec res (succ p)
     else fvprec (addSorted v res) (succ p) in
   (* recherche dans le carre *)
   let rec fcprec res n p =
     if p = subsizej then res
     else if n = subsizei then fcprec res 0 (succ p)
-    else let v = Array2.get a (ibl + n) (jbl + p) in
+    else let v = a2get a (ibl + n) (jbl + p) in
     if v = 0 then fcprec res (succ n) p
     else fcprec (addSorted v res) (succ n) p in
   let res = fhprec [] 0 in
@@ -149,28 +138,29 @@ let findImpossible a i j =
      - findUnknownCoordinates_min: on prend celui qui offre le 
      	minimum de possibilites au premier tour
  *)
-let findUnknownCoordinates_first a =
+let findUnknownCoordinates_first { size; a } =
   let rec frec i j =
     if i = size - 1 && j = size - 1 then (
-      if Array2.get a i j = 0 then Some (i, j)
+      if a2get a i j = 0 then Some (i, j)
       else None
     )
     else if i = size - 1 then (
-      if Array2.get a i j = 0 then Some (i, j)
+      if a2get a i j = 0 then Some (i, j)
       else frec 0 (succ j)
     )
     else (
-      if Array2.get a i j = 0 then Some (i, j)
+      if a2get a i j = 0 then Some (i, j)
       else frec (succ i) j 
     ) in
   frec 0 0
 
-let findUnknownCoordinates_min a =
+let findUnknownCoordinates_min conf =
+  let size, a = conf.size, conf.a in
   let rec frec res len i j =
     (* fin de grille *)
     if i = size - 1 && j = size - 1 then (
-      if Array2.get a i j = 0 then (
-        let lenl = List.length (findImpossible a i j) in
+      if a2get a i j = 0 then (
+        let lenl = List.length (findImpossible conf i j) in
         if lenl > len then Some (i, j)
 	else res
       )
@@ -178,8 +168,8 @@ let findUnknownCoordinates_min a =
     )
     (* fin de ligne *)
     else if i = size - 1 then (
-      if Array2.get a i j = 0 then (
-        let lenl = List.length (findImpossible a i j) in
+      if a2get a i j = 0 then (
+        let lenl = List.length (findImpossible conf i j) in
 	if lenl > len then frec (Some (i, j)) lenl 0 (succ j)
 	else frec res len 0 (succ j)
       )
@@ -187,8 +177,8 @@ let findUnknownCoordinates_min a =
     )
     (* element suivant *)
     else (
-      if Array2.get a i j = 0 then (
-	let lenl = List.length (findImpossible a i j) in
+      if a2get a i j = 0 then (
+	let lenl = List.length (findImpossible conf i j) in
 	if lenl > len then frec (Some (i, j)) lenl (succ i) j
 	else frec res len (succ i) j
       )
@@ -200,38 +190,30 @@ let findUnknownCoordinates_min a =
 let findUnknownCoordinates = findUnknownCoordinates_min
 
 (* solveur *)
-let rec solveGrid fdo level a =
-  (
-    if debug > 0 && level mod 64 = 0 then Printf.fprintf fdo "# niveau = %d\n" level;
-    match findUnknownCoordinates a with
-      None -> 
-      (* Printf.fprintf fdo "# possibilite (niveau %d):\n" level; *)
-      dumpGrid fdo a;
-      1
-    | Some (i, j) ->
-      let lst = findImpossible a i j in
-      let lst = sComplement lst in
-      if lst = [] then 0
-      else List.fold_left (fun count n -> 
-			Array2.set a i j n;
-			let count = count + solveGrid fdo (succ level) a in
-			Array2.set a i j 0;
-			count
-			)
-		      0
-		      lst
-  )
+let rec solveGrid fdo level conf =
+  if debug > 0 && level mod 64 = 0 then Printf.fprintf fdo "# niveau = %d\n" level;
+  match findUnknownCoordinates conf with
+  | None -> dumpGrid fdo conf.a; 1
+  | Some (i, j) ->
+    let lst = findImpossible conf i j in
+    let lst = sComplement lst conf.size in
+    if lst = [] then 0
+    else List.fold_left (fun count n -> 
+      a2set conf.a i j n;
+      let count = count + solveGrid fdo (succ level) conf in
+      a2set conf.a i j 0;
+      count
+    ) 0 lst
 
 (* emballage *)
 let _ =
   let fdi = open_in Sys.argv.(1) in
   let fdo = stdout in
-  let a = Array2.create int c_layout size size in
-  readGrid fdi a;
+  let conf = readParms fdi in
   Printf.fprintf fdo "# grille traitee:\n";
-  dumpGrid fdo a;
+  dumpGrid fdo conf.a;
   Printf.fprintf fdo "# =========\n";
-  let count = solveGrid fdo 0 a in
+  let count = solveGrid fdo 0 conf in
   Printf.fprintf fdo "# nb de solutions: %d\n" count
 
 
