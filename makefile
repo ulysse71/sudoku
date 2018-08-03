@@ -6,8 +6,8 @@ mysudoku.opt	: mysudoku.cmx
 mysudoku	: mysudoku.cmo
 	ocamlc -g bigarray.cma $< -o $@
 
-tests	: mysudoku.opt
-	for file in samples/puzzle*; do ./mysudoku.opt $$file; done;
+tests	: all
+	for file in samples/puzzle*; do echo $$file 1>&2; ./mysudoku.opt $$file; done;
 
 clean	:
 	rm -f *.cm* *.o
