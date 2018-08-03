@@ -7,7 +7,7 @@ mysudoku	: mysudoku.cmo
 	ocamlc -g bigarray.cma $< -o $@
 
 tests	: all
-	for file in samples/puzzle*; do echo $$file 1>&2; ./mysudoku.opt $$file; done;
+	for file in samples/puzzle*.dat; do echo $$file 1>&2; ./mysudoku.opt $$file > $$file.res; done;
 
 clean	:
 	rm -f *.cm* *.o

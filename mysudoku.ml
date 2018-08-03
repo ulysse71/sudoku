@@ -58,6 +58,7 @@ type parmsT = {
 (* modes *)
 let createParms size a =
   match size with
+  | 8 -> { size; subsizei=4; subsizej=2; a }
   | 9 -> { size; subsizei=3; subsizej=3; a }
   | 16 -> { size; subsizei=4; subsizej=4; a }
   | _ -> failwith "invalid data"
