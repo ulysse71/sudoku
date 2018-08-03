@@ -12,6 +12,7 @@
  *
  * fichier: puzzle
  *  cat > puzzle <<eof
+ *  9
  *  001005000
  *  050490000
  *  000102064
@@ -29,16 +30,15 @@
 (* parametrage *)
 let debug = 0
 
-(* traductions *)
-let ch0 = int_of_char '0'
-let cha = int_of_char 'A'
-
 let a2get a i j = a.(i).(j)
 let a2set a i j v = a.(i).(j) <- v
 
 (* 0:inconnu
    1-9, A-.: nombre
  *)
+let ch0 = int_of_char '0'
+let cha = int_of_char 'A'
+
 let char2int ch =
   let ich = int_of_char ch in
   if ich < ch0 + 10 then ich - ch0
@@ -81,7 +81,7 @@ let dumpGrid fdo a =
 let addSorted a lst =
   let rec asrec res lst =
     match lst with
-      [] -> List.rev_append (a::res) lst
+    | [] -> List.rev_append (a::res) lst
     | car::cdr ->
       if a = car then List.rev_append res lst
       else if a < car then List.rev_append res (a::lst)
@@ -93,7 +93,7 @@ let sComplement lst size =
   let rec screc res i lst =
     if i = size + 1 then List.rev res
     else match lst with
-      [] -> screc (i::res) (succ i) []
+    | [] -> screc (i::res) (succ i) []
     | car::cdr ->
       if i = car then screc res (succ i) cdr
       else if i < car then screc (i::res) (succ i) lst
@@ -193,7 +193,7 @@ let findUnknownCoordinates = findUnknownCoordinates_min
 let rec solveGrid fdo level conf =
   if debug > 0 && level mod 64 = 0 then Printf.fprintf fdo "# niveau = %d\n" level;
   match findUnknownCoordinates conf with
-  | None -> dumpGrid fdo conf.a; 1
+  | None -> dumpGrid fdo conf.a; output_string fdo "---\n"; 1
   | Some (i, j) ->
     let lst = findImpossible conf i j in
     let lst = sComplement lst conf.size in
