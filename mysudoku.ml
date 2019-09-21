@@ -81,7 +81,7 @@ let dumpGrid fdo a =
 
 let dumpGridOctave fdo a =
   let n, p = Array.length a, Array.length a.(0) in
-  Printf.printf "[ ";
+  Printf.printf "[";
   for i = 0 to n-1 do
     for j = 0 to p-1 do
       if j=0 then Printf.printf "%d" a.(i).(j)
@@ -89,7 +89,7 @@ let dumpGridOctave fdo a =
     done;
     if i<>n-1 then Printf.printf ";\n"
   done;
-  Printf.printf " ]\n"
+  Printf.printf "]\n"
 
 
 (* ajout d'un element dans une liste triee *)
