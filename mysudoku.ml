@@ -58,6 +58,7 @@ type parmsT = {
 (* modes *)
 let createParms size a =
   match size with
+  | 4 -> { size; subsizei=2; subsizej=2; a }
   | 8 -> { size; subsizei=4; subsizej=2; a }
   | 9 -> { size; subsizei=3; subsizej=3; a }
   | 16 -> { size; subsizei=4; subsizej=4; a }
@@ -77,6 +78,19 @@ let readParms fdi =
 (* ecriture de la grille *)
 let dumpGrid fdo a =
   Array.iter (fun v -> Array.iter (fun e ->  output_char fdo (int2char e)) v; output_char fdo '\n') a
+
+let dumpGridOctave fdo a =
+  let n, p = Array.length a, Array.length a.(0) in
+  Printf.printf "[ ";
+  for i = 0 to n-1 do
+    for j = 0 to p-1 do
+      if j=0 then Printf.printf "%d" a.(i).(j)
+      else Printf.printf ",%d" a.(i).(j)
+    done;
+    if i<>n-1 then Printf.printf ";\n"
+  done;
+  Printf.printf " ]\n"
+
 
 (* ajout d'un element dans une liste triee *)
 let addSorted a lst =
@@ -194,7 +208,7 @@ let findUnknownCoordinates = findUnknownCoordinates_min
 let rec solveGrid fdo level conf =
   if debug > 0 && level mod 64 = 0 then Printf.fprintf fdo "# niveau = %d\n" level;
   match findUnknownCoordinates conf with
-  | None -> dumpGrid fdo conf.a; output_string fdo "---\n"; 1
+  | None -> dumpGridOctave fdo conf.a; output_string fdo "---\n"; 1
   | Some (i, j) ->
     let lst = findImpossible conf i j in
     let lst = sComplement lst conf.size in
